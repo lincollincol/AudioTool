@@ -1,2 +1,3 @@
 rootProject.name='AudioTool'
 include ':app'
+include ':library'
