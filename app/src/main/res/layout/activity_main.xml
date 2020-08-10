@@ -6,13 +6,22 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Hello World!"
+    <com.masoudss.lib.WaveformSeekBar
+        android:id="@+id/waveform"
+        android:layout_width="0dp"
+        android:layout_height="40dp"
+        android:layout_margin="50dp"
+        app:wave_progress="33"
+        app:wave_width="1dp"
+        app:wave_gap="2dp"
+        app:wave_min_height="5dp"
+        app:wave_corner_radius="2dp"
+        app:wave_background_color="@color/colorAccent"
+        app:wave_progress_color="@color/colorPrimary"
+        app:wave_gravity="center"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
