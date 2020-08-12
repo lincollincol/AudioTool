@@ -1,15 +1,21 @@
 package linc.com.library
 
 import android.content.Context
-import androidx.annotation.Nullable
+import android.util.Log
 import nl.bravobit.ffmpeg.ExecuteBinaryResponseHandler
 import nl.bravobit.ffmpeg.FFmpeg
+import nl.bravobit.ffmpeg.FFprobe
+
 import java.io.File
 import java.io.FileNotFoundException
+import java.lang.StringBuilder
+
 
 object AudioTool {
 
     private lateinit var ffmpeg: FFmpeg
+    private lateinit var ffprobe: FFprobe
+
 
     // Tool settings
     private lateinit var audio: File
@@ -17,6 +23,7 @@ object AudioTool {
 
     fun init(context: Context) {
         ffmpeg = FFmpeg.getInstance(context)
+        ffprobe = FFprobe.getInstance(context)
     }
 
     /**
@@ -85,26 +92,67 @@ object AudioTool {
     /**
      * @param onComplete lambda with result byte array
      */
-    fun getAmplitudes(onComplete: (amplitudes: ByteArray) -> Unit): AudioTool {
+    fun getAmplitudes(onComplete: (amplitudes: IntArray) -> Unit): AudioTool {
+//        "/storage/9016-4EF8/MUSIC/Kygo - Only Us.mp3"
 
-        val file = File("/storage/emulated/0/viber/kygo.wav")
-//        val wav =  WaveFile()
-//
-//        wav.extractAmplitudeFromFile(file).forEach {
-//            print(" it")
-//        }
+//        val path = "/storage/9016-4EF8/MUSIC/Kygo - Only Us.mp3"
+//        val path = "/storage/emulated/0/viber/ex.wav"
+        val path = "/storage/emulated/0/viber/wkygo.wav"
+//      // ffprobe -f lavfi -i amovie=kygo.mp3,astats=metadata=1:reset=1
+//      -show_entries frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level
+//      -of csv=p=0 1> log_amp.txt
 
-        println()
+//        println("SUPPORTED ============= ${ffprobe.isSupported}")
 
 
-        /*println(ffmpeg.isSupported)
 
-        execFFmpegBinary(arrayOf(
-            "-i", "/storage/9016-4EF8/MUSIC/Kygo - Only Us.mp3", "/storage/emulated/0/viber/kygo.wav"
+        execFFprobeBinary(arrayOf(
+            "-f",
+            "lavfi",
+            "-i",
+            "amovie=$path,astats=metadata=1:reset=1",
+            "-show_entries",
+            "frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level",
+            "-of",
+            "csv=p=0"
+        ))
+
+        /*execFFmpegBinary(arrayOf(
+            "-version",
+            "2>&1",
+            "/storage/emulated/0/viber/probe_log.txt"
+        ))*/
+
+
+        /*val process = Runtime.getRuntime().exec(arrayOf(
+            "ffprobe", "-version"
         ))*/
 
         return this
     }
+
+
+    fun parseLog(log: String) {
+        val lines = log.splitToSequence("\n").toMutableList()
+        val resultAmplitudes = mutableListOf<Byte>()
+        var dB: String
+
+        lines.forEach {
+            if(it.isNotEmpty()) {
+                it.apply {
+                    drop(indexOf(",") + 1).apply {
+                        dB = removeRange(indexOf(","), length)
+                        when {
+                            dB == "-inf" -> resultAmplitudes.add(0)
+                            else -> resultAmplitudes.add((dB.toFloat().toByte() + 110).toByte())
+                        }
+
+                    }
+                }
+            }
+        }
+    }
+
 
     /**
      * @param volume     volume percent -> 0.75 as 75% of volume
@@ -242,4 +290,31 @@ object AudioTool {
             })
         } catch (e: Exception) {}
     }
+
+    private fun execFFprobeBinary(command: Array<String>) {
+        try {
+            val data = StringBuilder()
+            ffprobe.execute(command, object : ExecuteBinaryResponseHandler() {
+                override fun onFailure(s: String?) {
+                    println("Fail $s")
+                }
+                override fun onSuccess(s: String?) {
+                    println("Success $s")
+                    data.append(s)
+                }
+                override fun onProgress(s: String?) {
+                    println("Progress $s")
+//                    data.append(s)
+                }
+                override fun onStart() {
+                    println("Start")
+                }
+                override fun onFinish() {
+                    println("Finish")
+                    File("/storage/emulated/0/viber/probe_log.txt").writeText(data.toString())
+                }
+            })
+        } catch (e: Exception) {}
+    }
+
 }
