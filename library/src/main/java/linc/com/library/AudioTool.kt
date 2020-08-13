@@ -1,20 +1,29 @@
 package linc.com.library
 
+/*import nl.bravobit.ffmpeg.ExecuteBinaryResponseHandler
+import nl.bravobit.ffmpeg.FFmpeg
+import nl.bravobit.ffmpeg.FFprobe*/
+
+import android.content.ContentValues.TAG
+import com.arthenica.mobileffmpeg.FFmpeg
 import android.content.Context
 import android.util.Log
-import nl.bravobit.ffmpeg.ExecuteBinaryResponseHandler
-import nl.bravobit.ffmpeg.FFmpeg
-import nl.bravobit.ffmpeg.FFprobe
-
+import com.arthenica.mobileffmpeg.Config
+import com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS
+import com.arthenica.mobileffmpeg.FFprobe
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileNotFoundException
-import java.lang.StringBuilder
+import kotlin.coroutines.CoroutineContext
 
 
 object AudioTool {
 
-    private lateinit var ffmpeg: FFmpeg
-    private lateinit var ffprobe: FFprobe
+//    private lateinit var ffmpeg: FFmpeg
+//    private lateinit var ffprobe: FFprobe
 
 
     // Tool settings
@@ -22,8 +31,8 @@ object AudioTool {
     private lateinit var outputDirectory: String
 
     fun init(context: Context) {
-        ffmpeg = FFmpeg.getInstance(context)
-        ffprobe = FFprobe.getInstance(context)
+//        ffmpeg = FFmpeg.getInstance(context)
+//        ffprobe = FFprobe.getInstance(context)
     }
 
     /**
@@ -97,16 +106,14 @@ object AudioTool {
 
 //        val path = "/storage/9016-4EF8/MUSIC/Kygo - Only Us.mp3"
 //        val path = "/storage/emulated/0/viber/ex.wav"
-        val path = "/storage/emulated/0/viber/wkygo.wav"
-//      // ffprobe -f lavfi -i amovie=kygo.mp3,astats=metadata=1:reset=1
-//      -show_entries frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level
-//      -of csv=p=0 1> log_amp.txt
+        val path = "/storage/emulated/0/viber/kygo.mp3"
+//      // ffprobe -f lavfi -i amovie=kygo.mp3,astats=metadata=1:reset=1 -show_entries frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level -of csv=p=0 1> log_amp.txt
 
 //        println("SUPPORTED ============= ${ffprobe.isSupported}")
 
 
 
-        execFFprobeBinary(arrayOf(
+        /*execFFprobeBinary(arrayOf(
             "-f",
             "lavfi",
             "-i",
@@ -115,12 +122,12 @@ object AudioTool {
             "frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level",
             "-of",
             "csv=p=0"
-        ))
+        ))*/
 
-        /*execFFmpegBinary(arrayOf(
+        /*execFFprobeBinary(arrayOf(
             "-version",
-            "2>&1",
-            "/storage/emulated/0/viber/probe_log.txt"
+            "1>",
+            "/storage/emulated/0/viber/log_log.txt"
         ))*/
 
 
@@ -128,12 +135,46 @@ object AudioTool {
             "ffprobe", "-version"
         ))*/
 
+
+
+        CoroutineScope(Dispatchers.Default).launch {
+            val result = async<String> {
+                Config.enableRedirection()
+                FFprobe.execute("-f lavfi -i amovie=$path,astats=metadata=1:reset=1 -show_entries frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level -of csv=p=0")
+                return@async Config.getLastCommandOutput()
+            }
+
+            parseLog(result.await()).forEach {
+                print(" $it")
+            }
+        }
+
+//ffprobe -i $path amovie,astats=metadata=1:reset=1 -show_entries frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level -of csv=p=0 >& /storage/emulated/0/viber/logger.txt
+
+
+        /*val rc = FFmpeg.execute(
+            "-f",
+            "lavfi",
+            "-i",
+            "amovie=$path,astats=metadata=1:reset=1",
+            "-show_entries",
+            "frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level",
+            "-of",
+            "csv=p=0"
+        )
+        Log.i("FFMPEG", String.format("Command execution %s.", (if(rc == 0) "completed successfully" else "failed with rc=" + rc)))*/
+
         return this
     }
 
 
-    fun parseLog(log: String) {
-        val lines = log.splitToSequence("\n").toMutableList()
+    fun parseLog(log: String) : ByteArray {
+        var lines: MutableList<String> = mutableListOf()
+        log.drop(log.indexOf("\n0.000000") + 1).apply {
+            lines = removeRange(indexOf("["), length)
+                .splitToSequence("\n")
+                .toMutableList()
+        }
         val resultAmplitudes = mutableListOf<Byte>()
         var dB: String
 
@@ -151,6 +192,7 @@ object AudioTool {
                 }
             }
         }
+        return resultAmplitudes.toByteArray()
     }
 
 
@@ -269,7 +311,7 @@ object AudioTool {
 
 
 
-    private fun execFFmpegBinary(command: Array<String>) {
+    /*private fun execFFmpegBinary(command: Array<String>) {
         try {
             ffmpeg.execute(command, object : ExecuteBinaryResponseHandler() {
                 override fun onFailure(s: String?) {
@@ -315,6 +357,6 @@ object AudioTool {
                 }
             })
         } catch (e: Exception) {}
-    }
+    }*/
 
 }
