@@ -4,15 +4,20 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.os.Build
-import kotlinx.coroutines.*
+import android.util.StatsLog.logEvent
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.ShortBuffer
+import java.text.DateFormat
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.abs
 import kotlin.math.sqrt
+
 
 class SoundFileCopy private constructor() {
 
@@ -29,7 +34,7 @@ class SoundFileCopy private constructor() {
     var frameGains: IntArray? = null
     private var mFrameLens: IntArray? = null
     private var mFrameOffsets: IntArray? = null
-    private val samplesPerFrame = 1024
+    private val samplesPerFrame = 2
 
     private interface ProgressListener {
         fun reportProgress(fractionComplete: Double): Boolean
@@ -63,35 +68,24 @@ class SoundFileCopy private constructor() {
             return false
         }
 
-        @Throws(FileNotFoundException::class, IOException::class)
-        fun create(files: List<String>, ignoreExtension: Boolean = false, onComplete: (amplitudes: List<IntArray>) -> Unit) {
-            CoroutineScope(Dispatchers.Default).launch {
-                val asyncBag = mutableListOf<Deferred<IntArray>>()
-                files.forEach { audio ->
-                    asyncBag + async {
-                        if (!ignoreExtension && !isFilenameSupported(audio))
-                            throw IOException("Not supported file extension.")
+        @Throws(FileNotFoundException::class, IOException::class, Exception::class)
+        fun create(fileName: String, ignoreExtension: Boolean = false): SoundFileCopy? {
+            if (!ignoreExtension && !isFilenameSupported(fileName))
+                throw Exception("Not supported file extension.")
 
-                        val f = File(audio)
-                        if (!f.exists()) {
-                            throw FileNotFoundException(audio)
-                        }
-                        val soundFile = SoundFileCopy()
-                        soundFile.readFile(f)
-                    }
-                }
-
-                onComplete(asyncBag.map {
-                    it.await()
-                })
-
+            val f = File(fileName)
+            if (!f.exists()) {
+                throw FileNotFoundException(fileName)
             }
-
+            val soundFile = SoundFileCopy()
+            soundFile.readFile(f)
+            return soundFile
         }
-
     }
 
-    private suspend fun readFile(inputFile: File): IntArray {
+    private fun readFile(inputFile: File) {
+        printLog(System.currentTimeMillis(), "Start method 87")
+
         val extractor = MediaExtractor()
         var format: MediaFormat? = null
 
@@ -101,6 +95,9 @@ class SoundFileCopy private constructor() {
         val numTracks = extractor.trackCount
 
         var i = 0
+
+        printLog(System.currentTimeMillis(), "Enter first while loop: 99")
+
         while (i < numTracks) {
             format = extractor.getTrackFormat(i)
             if (format!!.getString(MediaFormat.KEY_MIME).startsWith("audio/")) {
@@ -109,8 +106,11 @@ class SoundFileCopy private constructor() {
             }
             i++
         }
+
+        printLog(System.currentTimeMillis(), "Out first while loop: 107")
+
         if (i == numTracks) {
-            throw IOException("No audio track found in " + mInputFile!!)
+            throw Exception("No audio track found in " + mInputFile!!)
         }
         channels = format!!.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
         sampleRate = format.getInteger(MediaFormat.KEY_SAMPLE_RATE)
@@ -133,6 +133,9 @@ class SoundFileCopy private constructor() {
         var doneReading = false
         mDecodedBytes = ByteBuffer.allocate(1 shl 20)
         var firstSampleData = true
+
+        printLog(System.currentTimeMillis(), "Enter second big loop: 137")
+
         while (true) {
 
             val inputBufferIndex = codec.dequeueInputBuffer(100)
@@ -164,7 +167,7 @@ class SoundFileCopy private constructor() {
                             extractor.release()
                             codec.stop()
                             codec.release()
-                            return IntArray(0)
+                            return
                         }
                     }
                 }
@@ -195,9 +198,10 @@ class SoundFileCopy private constructor() {
                     if (newSize - position < info.size + 5 * (1 shl 20)) {
                         newSize = position + info.size + 5 * (1 shl 20)
                     }
-                    var newDecodedBytes: ByteBuffer? = null
+//                    var newDecodedBytes: ByteBuffer? = null
                     // Try to allocate memory. If we are OOM, try to run the garbage collector.
-                    var retry = 10
+                    /*var retry = 5
+                    printLog(System.currentTimeMillis(), "Enter third inner big loop: 204")
                     while (retry > 0) {
                         try {
                             newDecodedBytes = ByteBuffer.allocate(newSize)
@@ -206,12 +210,13 @@ class SoundFileCopy private constructor() {
                             retry--
                         }
                     }
+                    printLog(System.currentTimeMillis(), "Out third inner big loop: 204")
                     if (retry == 0) {
                         break
-                    }
+                    }*/
                     mDecodedBytes!!.rewind()
-                    newDecodedBytes!!.put(mDecodedBytes)
-                    mDecodedBytes = newDecodedBytes
+//                    newDecodedBytes!!.put(mDecodedBytes)
+//                    mDecodedBytes = newDecodedBytes
                     mDecodedBytes!!.position(position)
                 }
 
@@ -228,6 +233,8 @@ class SoundFileCopy private constructor() {
                 break
             }
         }
+        printLog(System.currentTimeMillis(), "Out second big loop: 236")
+
         numSamples = mDecodedBytes!!.position() / (channels * 2)  // One sample = 2 bytes.
         mDecodedBytes!!.rewind()
         mDecodedBytes!!.order(ByteOrder.LITTLE_ENDIAN)
@@ -250,9 +257,12 @@ class SoundFileCopy private constructor() {
         val frameLens = (1000 * avgBitrateKbps / 8 * (samplesPerFrame.toFloat() / sampleRate)).toInt()
         i = 0
 
+        printLog(System.currentTimeMillis(), "Enter fourth loop: 260")
+
         while (i < numFrames) {
             gain = -1
             j = 0
+//            printLog(System.currentTimeMillis(), "Enter fiveth inner loop: 265")
             while (j < samplesPerFrame) {
                 value = 0
                 for (k in 0 until channels)
@@ -263,14 +273,24 @@ class SoundFileCopy private constructor() {
                     gain = value
                 j++
             }
+//            printLog(System.currentTimeMillis(), "Out fiveth inner loop: 276")
             frameGains!![i] = sqrt(gain.toDouble()).toInt()
             mFrameLens!![i] = frameLens
             mFrameOffsets!![i] = (i.toFloat() * (1000 * avgBitrateKbps / 8).toFloat() * (samplesPerFrame.toFloat() / sampleRate)).toInt()
             i++
         }
+        printLog(System.currentTimeMillis(), "Out third loop: 282")
 
         mDecodedSamples!!.rewind()
-
-        return frameGains!!
+        printLog(System.currentTimeMillis(), "End: 285")
     }
+
+
+    fun printLog(millis: Long, msg: String) {
+        val date = Date(millis)
+        val formatter: DateFormat = SimpleDateFormat("HH:mm:ss.SSS")
+        formatter.setTimeZone(TimeZone.getTimeZone("UTC"))
+        println("LOGGER___________TIME ___________======================= $msg === ${formatter.format(date)}")
+    }
+
 }
