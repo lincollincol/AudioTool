@@ -99,102 +99,28 @@ object AudioTool {
     /**
      * @param onComplete lambda with result byte array
      */
-
-
-    /* with convertation +-10s
-    fun getAmplitudes(onComplete: (amplitudes: IntArray) -> Unit): AudioTool {
-        val decoder = WaveDecoder(FileInputStream(File("/storage/emulated/0/viber/kygo.wav")))
-        val fft = FFT(1024, 44100f)
-
-        val samples = FloatArray(1024)
-        val spectrum = FloatArray(1024 / 2 + 1)
-        val lastSpectrum = FloatArray(1024 / 2 + 1)
-        val spectralFlux: MutableList<Float> = ArrayList()
-
-        while (decoder.readSamples(samples) > 0) {
-            fft.forward(samples)
-            System.arraycopy(spectrum, 0, lastSpectrum, 0, spectrum.size)
-            System.arraycopy(fft.getSpectrum(), 0, spectrum, 0, spectrum.size)
-            var flux = 0f
-            for (i in spectrum.indices) flux += spectrum[i] - lastSpectrum[i]
-            spectralFlux.add(flux)
-        }
-
-        val out = File("/storage/emulated/0/viber/bytes_amp.txt").apply {
-            writeText("")
-        }
-        spectralFlux.forEach {
-            val res = it.roundToInt()
-            out.appendText("${if(res < 0) -1*res else res}\n")
-        }
-
-        return this
-    }*/
     fun getAmplitudes(onComplete: (amplitudes: IntArray) -> Unit): AudioTool {
         val path = "/storage/emulated/0/viber/kygo.mp3"
         CoroutineScope(Dispatchers.Default).launch {
             val result = async<String> {
                 Config.enableRedirection()
                 Config.setLogLevel(Level.AV_LOG_QUIET)
-//                FFprobe.execute("-f lavfi -i amovie=$path,astats=metadata=1:reset=1 -show_entries frame=pkt_pts_time:frame_tags=lavfi.astats.Overall.RMS_level,lavfi.astats.1.RMS_level,lavfi.astats.2.RMS_level -of csv=p=0")
-                // ffprobe -f lavfi -i amovie=kygo.mp3,asetnsamples=n=11264,astats=metadata=1:reset=1 -show_entries frame_tags=lavfi.astats.Overall.MAX_level -of csv=p=0 1> my_out_log.txt
                 FFprobe.execute("-f lavfi -i amovie=$path,asetnsamples=n=11264,astats=metadata=1:reset=1 -show_entries frame_tags=lavfi.astats.Overall.Max_level -of csv=p=0")
                 return@async Config.getLastCommandOutput()
             }
 
             withContext(Dispatchers.Main) {
-//                parseLog(result.await())
-                File("/storage/emulated/0/viber/bytes_amp.txt").writeText(result.await())
+                parseLog(result.await())
             }
-
-//            File("/storage/emulated/0/viber/bytes_amp.txt").writeText()
-
-//            parseLog(result.await()).forEach {
-//                print("Res ==== ${it*1000}")
-//            }
         }
 
         return this
     }
 
-    fun parseLog(log: String) {
-        Toast.makeText(context, "SUCCESS", Toast.LENGTH_LONG).show()
-        val out = File("/storage/emulated/0/viber/bytes_amp.txt").apply {
-            writeText("")
-        }
-        val res = mutableSetOf<Int>()
-        log.splitToSequence("\n").forEach {
-            res.add(if(it.isEmpty()) 0 else (it.toFloat() * 100).roundToInt())
-        }
-
-        res.forEach {
-            out.appendText("$it\n")
-        }
-
-//        var lines: MutableList<String> = mutableListOf()
-//        log.drop(log.indexOf("\n0.000000") + 1).apply {
-//            lines = removeRange(indexOf("["), length)
-//                .splitToSequence("\n")
-//                .toMutableList()
-//        }
-//        val resultAmplitudes = mutableListOf<Byte>()
-//        var dB: String
-//
-//        lines.forEach {
-//            if(it.isNotEmpty()) {
-//                it.apply {
-//                    drop(indexOf(",") + 1).apply {
-//                        dB = removeRange(indexOf(","), length)
-//                        when {
-//                            dB == "-inf" -> resultAmplitudes.add(0)
-//                            else -> resultAmplitudes.add((dB.toFloat().toByte() + 110).toByte())
-//                        }
-//
-//                    }
-//                }
-//            }
-//        }
-//        return resultAmplitudes.toByteArray()
+    fun parseLog(log: String): IntArray {
+        return log.splitToSequence("\n").map {
+            if(it.isEmpty()) 0 else (it.toFloat() * 1000).roundToInt()
+        }.toMutableList().toIntArray()
     }
 
 

@@ -19,6 +19,8 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+//            minifyEnabled true //Important step
+//            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -36,17 +38,10 @@ dependencies {
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.core:core-ktx:1.3.1'
 
-//    implementation 'nl.bravobit:android-ffmpeg:1.1.7'
-
     implementation 'com.arthenica:mobile-ffmpeg-full:4.4'
 
     // Coroutines
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.7'
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:1.3.7'
 
-//    implementation files('libs/jl1.0.jar')
-//    implementation files('libs/jlayer-1.0.1.jar')
-//    implementation files('libs/mp3spi1.9.4.jar')
-//    implementation files('libs/tritonus_aos.jar')
-//    implementation files('libs/tritonus_share.jar')
 }
