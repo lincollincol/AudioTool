@@ -1,7 +1,10 @@
 package linc.com.library;
 
 import android.content.Context;
+import android.media.MediaMetadataRetriever;
+import android.media.audiofx.DynamicsProcessing;
 import android.os.Environment;
+import android.provider.MediaStore;
 
 import androidx.core.content.ContextCompat;
 
@@ -87,7 +90,13 @@ public class AudioTool {
      * @param end   format in second -> 0
      */
     public AudioTool cutAudio(int start, int end, OnFileComplete onCompleteCallback) {
-        FFmpeg.execute("-i", audio.getPath());
+        cutAudio(start, end);
+        onCompleteCallback.onComplete(audio);
+        return this;
+    }
+
+    public AudioTool cutAudio(int start, int end) {
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-ss" , "" + start, "-to", "" + end, audio.getPath());
         return this;
     }
 
@@ -97,7 +106,8 @@ public class AudioTool {
      * "mm:ss:ms"
      */
     public AudioTool cutAudio(String start, String end, OnFileComplete onCompleteCallback) {
-
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-ss" , start, "-to", end, audio.getPath());
+        onResultFile(onCompleteCallback);
         return this;
     }
 
@@ -123,6 +133,11 @@ public class AudioTool {
      * @param onCompleteCallback lambda with result audio
      */
     public AudioTool changeAudioVolume(float volume, int start, int end, OnFileComplete onCompleteCallback) {
+        volume = Limiter.limit(0f, 12000f, volume);
+        start = Limiter.limit(0, ((int) getDurationMillis() / 1000), start);
+        end = Limiter.limit(0, ((int) getDurationMillis() / 1000), end);
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-af", "volume=enable='between(t," + start + "," + end + ")':volume=" + volume, audio.getPath());
+        onResultFile(onCompleteCallback);
         /*
             If we want our volume to be half of the input volume:
 
@@ -140,15 +155,22 @@ public class AudioTool {
         return this;
     }
 
-    public AudioTool changeAudioSpeed(Float xSpeed, OnFileComplete onCompleteCallback) {
-//        ffmpeg -i pre.mp3 -filter:a "atempo=2.0" -vn tempoout.mp3
-        changeAudioSpeed(xSpeed);
-        onCompleteCallback.onComplete(audio);
+    public AudioTool changeAudioVolume(float volume, OnFileComplete onCompleteCallback) {
+        //ffmpeg -i input.wav -filter:a "volume=1.5" output.wav
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter:a", "\"volume=" + volume + "\"", audio.getPath());
+        onResultFile(onCompleteCallback);
         return this;
     }
 
-    public AudioTool changeAudioSpeed(Float xSpeed) {
-//        ffmpeg -i pre.mp3 -filter:a "atempo=2.0" -vn tempoout.mp3
+    public AudioTool normalizeAudioVolume(OnFileComplete onCompleteCallback) {
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter:a", "loudnorm", audio.getPath());
+        onResultFile(onCompleteCallback);
+        return this;
+    }
+
+    public AudioTool changeAudioSpeed(Float xSpeed, OnFileComplete onCompleteCallback) {
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter:a", "\"atempo=2.0\"", audio.getPath());
+        onResultFile(onCompleteCallback);
         return this;
     }
 
@@ -158,58 +180,75 @@ public class AudioTool {
         return this;
     }
 
-    public AudioTool changeAudioBass(int bass/*[-20;20]*/, float width/*[0;1]*/, int frequency) {
+    public AudioTool changeAudioBass(float bass/*[-20;20]*/, float width/*[0;1]*/, int frequency/*[0 - 999999]*/, OnFileComplete onCompleteCallback) {
         // ffmpeg -y -i kygo.mp3 -af bass=g=10:w=0.5:f=150 bass.mp3
+        bass = Limiter.limit(-20, 20, bass);
+        width = Limiter.limit(0, 1, width);
+        frequency = Limiter.limit(0, 999999, frequency);
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-af", "bass=g=" + bass + ":w=" + width + ":f=" + frequency, audio.getPath());
+        onResultFile(onCompleteCallback);
         return this;
     }
 
-    public AudioTool removeAudioNoise() {
-        // todo filterAudio(400, 4000)
+    public AudioTool removeAudioNoise(OnFileComplete onCompleteCallback) {
+        filterAudio(400, 4000, onCompleteCallback);
         return this;
     }
 
-    public void removeVocal() {
+    public AudioTool removeVocal(OnFileComplete onCompleteCallback) {
 //        ffmpeg -i song.mp3 -af pan="stereo|c0=c0|c1=-1*c1" -ac 1 karaoke.mp3
-    }
-
-    public AudioTool filterAudio(int highpass, int lowpass) {
-//        ffmpeg -y -i kygo.mp3 -af "highpass=f=400, lowpass=f=4000" noise.mp3
-//        ffmpeg -y -i kygo.mp3 -af "bandreject=f=900:width_type=h:w=600, bandreject=f=900:width_type=h:w=600" instr.mp3
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-af", "pan=\"stereo|c0=c0|c1=-1*c1\"", "-ac", "1", audio.getPath());
+        onResultFile(onCompleteCallback);
         return this;
     }
 
-    public AudioTool reverseAudio() {
-//        ffmpeg -i levels.mp3 -map 0 -c:v copy -af "areverse" reversed_levels.mp3
+    public AudioTool filterAudio(int highpass, int lowpass, OnFileComplete onCompleteCallback) {
+        highpass = Limiter.limit(0, 999999, highpass);
+        lowpass = Limiter.limit(0, 999999, lowpass);
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-af", "\"highpass=f=" + highpass + ", lowpass=f=" + lowpass + "\"", audio.getPath());
+        onResultFile(onCompleteCallback);
         return this;
     }
 
-    public AudioTool applyEchoEffect(/*type*/) {
-
-        // ffmpeg -y -i kygo.mp3 -filter_complex "aecho=0.8:0.88:60:0.4" echo.mp3
-        // ffmpeg -y -i kygo.mp3 -filter_complex "aecho=0.8:0.88:6:0.4" echo.mp3
-        // ffmpeg -y -i kygo.mp3 -filter_complex "aecho=0.8:0.9:1000:0.3" echo.mp3
-        // ffmpeg -y -i kygo.mp3 -filter_complex "aecho=0.8:0.9:1000|1800:0.3|0.25" echo.mp3
-
+    public AudioTool reverseAudio(OnFileComplete onCompleteCallback) {
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-map", "0", "-c:v", "copy", "-af", "\"areverse\"", audio.getPath());
+        onResultFile(onCompleteCallback);
         return this;
     }
 
-    public AudioTool applyVibratoEffect(int frequency/*[0.1 - 20000.0]*/, float depth/*[0;1]*/) {
-
-        // ffmpeg -y -i kygo.mp3 -filter_complex "vibrato=f=4:d=0.9" vibrato.mp3
-
+    public AudioTool applyEchoEffect(Echo echo, OnFileComplete onCompleteCallback) {
+        String filter;
+        switch (echo) {
+            case ECHO_TWICE_INSTRUMENTS: filter = "\"aecho=0.8:0.88:60:0.4\"";break;
+            case ECHO_METALLIC: filter = "\"aecho=0.8:0.88:6:0.4\"";break;
+            case ECHO_OPEN_AIR: filter = "\"aecho=0.8:0.9:1000:0.3\"";break;
+            default: filter = "\"aecho=0.8:0.9:1000|1800:0.3|0.25\"";
+        }
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter_complex", filter, audio.getPath());
+        onResultFile(onCompleteCallback);
         return this;
     }
 
-    public AudioTool applyReverbEffect(float audioDepth, float reverbDepth) {
+    public AudioTool applyVibratoEffect(float frequency/*[0.1 - 20000.0]*/, float depth/*[0;1]*/, OnFileComplete onCompleteCallback) {
+        frequency = Limiter.limit(0.1f, 20000, frequency);
+        depth = Limiter.limit(0, 1, depth);
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter_complex", "vibrato=f=" + frequency + ":d=" + depth, audio.getPath());
+        onResultFile(onCompleteCallback);
+        return this;
+    }
+
+    public AudioTool applyReverbEffect(float audioDepth, float reverbDepth, OnFileComplete onCompleteCallback) {
 
 //        ffmpeg -y -i kygo.mp3 -i lev_cut.mp3 -filter_complex '[0] [1] afir=dry=0.1:wet=0.1' reverb.mp3
-
+        onResultFile(onCompleteCallback);
         return this;
     }
 
-    public AudioTool applyShifterEffect(int transitionTime, int width/*[0;2]*/) {
+    public AudioTool applyShifterEffect(int transitionTime, int width/*[0;2]*/, OnFileComplete onCompleteCallback) {
 
         // ffmpeg -y -i kygo.mp3 -filter_complex "apulsator=mode=sine:hz=0.125:width=0" shifter.mp3
+
+        onResultFile(onCompleteCallback);
 
         // hz = 1/transitionTime
 
@@ -234,11 +273,29 @@ public class AudioTool {
         return this;
     }
 
+    public AudioTool convertVideoToAudio(OnFileComplete onCompleteCallback) {
+        FFmpeg.execute("-y", "-i", audio.getPath(), "-vn" , audio.getPath());
+        onResultFile(onCompleteCallback);
+        return this;
+    }
+
     public void joinAudios(File ... audios  ) {
 //        ffmpeg -f concat -safe 0 -i join.txt -c copy output.mp4
     }
 
-    public AudioTool executeFFmpeg(String command) {
+    public AudioTool getDuration(Duration duration, OnNumberComplete onNumberComplete) {
+        switch (duration) {
+            case MILLIS: onNumberComplete.onComplete(getDurationMillis());
+                break;
+            case SECONDS: onNumberComplete.onComplete(getDurationMillis() / 1000);
+                break;
+            case MINUTES: onNumberComplete.onComplete((getDurationMillis() % (1000 * 60 * 60)) / (1000 * 60));
+                break;
+        }
+        return this;
+    }
+
+    public AudioTool executeFFmpeg(String ... command) {
         return this;
     }
 
@@ -247,5 +304,19 @@ public class AudioTool {
     }
 
     public interface OnFileComplete extends OnCompleteCallback<File> {}
+    public interface OnNumberComplete extends OnCompleteCallback<Long> {}
+
+    private long getDurationMillis() {
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(audio.getAbsolutePath());
+        String durationStr = mediaMetadataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+        return Long.parseLong(durationStr);
+    }
+
+    private void onResultFile(OnFileComplete onCompleteCallback) {
+        if(onCompleteCallback != null) {
+            onCompleteCallback.onComplete(audio);
+        }
+    }
 
 }

@@ -10,6 +10,7 @@ import androidx.core.app.ActivityCompat;
 import java.io.File;
 
 import linc.com.library.AudioTool;
+import linc.com.library.Duration;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -28,6 +29,24 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onComplete(File output) {
 
+                    }
+                })
+                .getDuration(Duration.SECONDS, new AudioTool.OnNumberComplete() {
+                    @Override
+                    public void onComplete(Long output) {
+                        System.out.println("Duration from audio (sec) = " + output);
+                    }
+                })
+                .getDuration(Duration.MILLIS, new AudioTool.OnNumberComplete() {
+                    @Override
+                    public void onComplete(Long output) {
+                        System.out.println("Duration from audio (millis) = " + output);
+                    }
+                })
+                .getDuration(Duration.MINUTES, new AudioTool.OnNumberComplete() {
+                    @Override
+                    public void onComplete(Long output) {
+                        System.out.println("Duration from audio (min) = " + output);
                     }
                 })
                 .releaseAll();
