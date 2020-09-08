@@ -20,8 +20,10 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         ActivityCompat.requestPermissions(MainActivity.this,
-                new String[] { Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE },
-                1);
+                new String[] {
+                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                }, 1);
 
         AudioTool.getInstance(this)
                 .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
@@ -49,6 +51,6 @@ public class MainActivity extends AppCompatActivity {
                         System.out.println("Duration from audio (min) = " + output);
                     }
                 })
-                .releaseAll();
+                .release();
     }
 }
