@@ -17,8 +17,6 @@ android {
     buildTypes {
         release {
             minifyEnabled false
-//            minifyEnabled true //Important step
-//            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
@@ -34,7 +32,7 @@ dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.2.0'
 
-    implementation 'com.arthenica:mobile-ffmpeg-full:1.0'
+    implementation 'com.arthenica:mobile-ffmpeg-full:4.4.LTS'
 
 //    implementation 'nl.bravobit:android-ffmpeg:1.1.0'
 

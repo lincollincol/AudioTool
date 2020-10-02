@@ -5,17 +5,22 @@ import android.content.Context;
 import android.media.MediaMetadataRetriever;
 import android.net.Uri;
 import android.os.Environment;
+import android.util.Log;
+
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
+
+import com.arthenica.mobileffmpeg.Config;
 import com.arthenica.mobileffmpeg.FFmpeg;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Locale;
+
+import static linc.com.library.Constant.AUDIO_TOOL_TMP;
+import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS;
 
 public class AudioTool {
-
-    // Tmp audio prefix
-    private static String AUDIO_TOOL_TMP = "tmp_audio_tool_file_";
 
     // Tool settings
     private Context context;
@@ -37,6 +42,11 @@ public class AudioTool {
      * Set audio file source
      * @param sourceAudio path to the source file
      */
+    public AudioTool withAudio(String sourceAudio) {
+        withAudio(new File(sourceAudio));
+        return this;
+    }
+
     public AudioTool withAudio(File sourceAudio) {
         try {
             if(!sourceAudio.exists()) throw new FileNotFoundException();
@@ -85,8 +95,32 @@ public class AudioTool {
      * @param start format in second -> 0
      * @param end   format in second -> 0
      */
-    public AudioTool cutAudio(int start, int end, @Nullable OnFileComplete onCompleteCallback) {
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-ss" , "" + start, "-to", "" + end, audio.getPath());
+    public AudioTool cutAudio(int start, int end, @Nullable OnFileComplete onCompleteCallback) throws Exception {
+//        FileManager.copyFile(audio, audio);
+        File outputBuffer = FileManager.createBuffer(audio);
+        String command = String.format(Locale.getDefault(),
+                "-y -ss %d -i %s -t %d %s",
+                start, audio.getPath(), end, outputBuffer.getPath()
+        );
+        long rc = FFmpeg.execute(command);
+        audio = FileManager.overwriteFromBuffer(audio, outputBuffer);
+        /*long rc = FFmpeg.execute(formatCommand + audio.getPath(), (executionId1, returnCode) -> {
+            if (returnCode == RETURN_CODE_SUCCESS) {
+                Log.i(Config.TAG, "Async command execution completed successfully.");
+            } else if (returnCode == RETURN_CODE_CANCEL) {
+                Log.i(Config.TAG, "Async command execution cancelled by user.");
+            } else {
+                Log.i(Config.TAG, String.format("Async command execution failed with rc=%d.", returnCode));
+            }
+        });*/
+
+        if (rc == RETURN_CODE_SUCCESS) {
+            Log.i(Config.TAG, "Command execution completed successfully.");
+        } else {
+            Log.i(Config.TAG, String.format("Command execution failed with rc=%d and the output below.", rc));
+            Config.printLastCommandOutput(Log.INFO);
+        }
+//        FFmpeg.execute("-y -i" + audio.getPath() + "-ss" + start + "-to" + end + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -94,10 +128,9 @@ public class AudioTool {
     /**
      * @param start format -> "00:00:00"
      * @param end   format -> "00:20:30"
-     * "mm:ss:ms"
      */
     public AudioTool cutAudio(String start, String end, @Nullable OnFileComplete onCompleteCallback) {
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-ss" , start, "-to", end, audio.getPath());
+        FFmpeg.execute("-y -ss" + start + "-i" + audio.getPath() + "-to" + end + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -106,6 +139,7 @@ public class AudioTool {
      * @param width      format with in px -> 1920
      * @param height     format height in px -> 1080
      * @param color      format hex color value -> #4a4a4a
+     * @param outputPath path to source directory
      * @param onCompleteCallback lambda with result image
      */
     public AudioTool generateWaveform(int width,
@@ -114,9 +148,13 @@ public class AudioTool {
                                       String outputPath,
                                       OnFileComplete onCompleteCallback
     ) {
-        if(outputPath.isEmpty()) outputPath = imageDirectory + File.separator + AUDIO_TOOL_TMP + System.currentTimeMillis();
         // ffmpeg -i input -filter_complex "aformat=channel_layouts=mono,showwavespic=colors=#ad9557" -frames:v 1 output.png
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter_complex", "\"aformat=channel_layouts=mono,showwavespic=s=" + width + "x" + height + ":colors=" + color + "\"", outputPath);
+        File output = new File(outputPath);
+        if(outputPath.isEmpty() || !output.exists())
+            outputPath = imageDirectory + File.separator + AUDIO_TOOL_TMP + System.currentTimeMillis();
+        else if(output.isDirectory())
+            outputPath = FileManager.addFileTitle(output, AUDIO_TOOL_TMP + System.currentTimeMillis());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-filter_complex \"aformat=channel_layouts=mono,showwavespic=s=" + width + "x" + height + ":colors=" + color + "\"" + outputPath);
         onCompleteCallback.onComplete(new File(outputPath));
         return this;
     }
@@ -130,7 +168,7 @@ public class AudioTool {
         start = Limiter.limit(0, ((int) getDurationMillis() / 1000), start);
         end = Limiter.limit(0, ((int) getDurationMillis() / 1000), end);
 
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-af", "volume=enable='between(t," + start + "," + end + ")':volume=" + volume, audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-af volume=enable='between(t," + start + "," + end + ")':volume=" + volume + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -138,21 +176,23 @@ public class AudioTool {
     public AudioTool changeAudioVolume(float volume, @Nullable OnFileComplete onCompleteCallback) {
         volume = Limiter.limit(0f, 12000f, volume);
 
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter:a", "\"volume=" + volume + "\"", audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-filter:a \"volume=" + volume + "\"" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
 
     public AudioTool normalizeAudioVolume(@Nullable OnFileComplete onCompleteCallback) {
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter:a", "loudnorm", audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + " -filter:a loudnorm" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
 
     public AudioTool changeAudioSpeed(float xSpeed, @Nullable OnFileComplete onCompleteCallback) {
         xSpeed = Limiter.limit(0.5f, 2, xSpeed);
-
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter:a", "\"atempo=" + xSpeed + "\"", audio.getPath());
+        //
+//        FFmpeg.execute("-y -i " + audio.getPath() + " -af atempo=" + xSpeed + " " + audio.getPath());
+//        FFmpeg.execute("-y -i " + audio.getPath() + " -af atempo=" + xSpeed + " " + audio.getPath());
+        FFmpeg.execute("-y -i " + audio.getPath() + " -af atempo=2 " + audio.getPath());// + " -af atempo=" + xSpeed + " " + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -161,7 +201,7 @@ public class AudioTool {
 //        ffmpeg -y -i kygo.mp3 -filter_complex "asetrate=48000*2^(-10/12),atempo=1/2^(-10/12)" p_10_ky.mp3
         tempo = Limiter.limit(0.5f, 2, tempo);
 
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter_complex", "\"asetrate=" + sampleRate * pitch + "^(-10/12),atempo=" + tempo + "^(-10/12)\"", audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-filter_complex asetrate=" + sampleRate + "*" + pitch + "^(-10/12),atempo=" + tempo + "^(-10/12)" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -172,7 +212,7 @@ public class AudioTool {
         width = Limiter.limit(0f, 1f, width);
         frequency = Limiter.limit(0, 999999, frequency);
 
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-af", "bass=g=" + bass + ":w=" + width + ":f=" + frequency, audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-af" + "bass=g=" + bass + ":w=" + width + ":f=" + frequency + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -184,7 +224,7 @@ public class AudioTool {
 
     public AudioTool removeVocal(@Nullable OnFileComplete onCompleteCallback) {
 //        ffmpeg -i song.mp3 -af pan="stereo|c0=c0|c1=-1*c1" -ac 1 karaoke.mp3
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-af", "pan=\"stereo|c0=c0|c1=-1*c1\"", "-ac", "1", audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-af pan=\"stereo|c0=c0|c1=-1*c1\" -ac 1" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -193,13 +233,13 @@ public class AudioTool {
         highpass = Limiter.limit(0, 999999, highpass);
         lowpass = Limiter.limit(0, 999999, lowpass);
 
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-af", "\"highpass=f=" + highpass + ", lowpass=f=" + lowpass + "\"", audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-af \"highpass=f=" + highpass + ", lowpass=f=" + lowpass + "\"" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
 
     public AudioTool reverseAudio(@Nullable OnFileComplete onCompleteCallback) {
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-map", "0", "-c:v", "copy", "-af", "\"areverse\"", audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-map 0 -c:v copy -af \"areverse\"" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -212,7 +252,7 @@ public class AudioTool {
             case ECHO_OPEN_AIR: filter = "\"aecho=0.8:0.9:1000:0.3\"";break;
             default: filter = "\"aecho=0.8:0.9:1000|1800:0.3|0.25\"";
         }
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter_complex", filter, audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-filter_complex" + filter  + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -221,7 +261,7 @@ public class AudioTool {
         frequency = Limiter.limit(0.1f, 20000f, frequency);
         depth = Limiter.limit(0f, 1f, depth);
 
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter_complex", "vibrato=f=" + frequency + ":d=" + depth, audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-filter_complex vibrato=f=" + frequency + ":d=" + depth + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -238,7 +278,7 @@ public class AudioTool {
         audioDepth = Limiter.limit(0f, 1f, audioDepth);
         reverbDepth = Limiter.limit(0f, 1f, reverbDepth);
 
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-i", effectPath, "-filter_complex", "'[0] [1] afir=dry=" + audioDepth + ":wet=" + reverbDepth + "'", audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-i" + effectPath + "-filter_complex '[0] [1] afir=dry=" + audioDepth + ":wet=" + reverbDepth + "'" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -247,15 +287,15 @@ public class AudioTool {
         // ffmpeg -y -i kygo.mp3 -filter_complex "apulsator=mode=sine:hz=0.125:width=0" shifter.mp3
         float hz =  1/ (float) transitionTime;
         hz = Limiter.limit(0.01f, 100f, hz);
-        width = Limiter.limit(01f, 2f, width);
+        width = Limiter.limit(0.1f, 2f, width);
 
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-filter_complex", "\"apulsator=mode=sine:hz=" + hz + ":width=" + width + "\"" , audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-filter_complex \"apulsator=mode=sine:hz=" + hz + ":width=" + width + "\"" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
 
     public AudioTool convertVideoToAudio(@Nullable OnFileComplete onCompleteCallback) {
-        FFmpeg.execute("-y", "-i", audio.getPath(), "-vn" , audio.getPath());
+        FFmpeg.execute("-y -i" + audio.getPath() + "-vn" + audio.getPath());
         onResultFile(onCompleteCallback);
         return this;
     }
@@ -279,7 +319,7 @@ public class AudioTool {
         if(outputPath.isEmpty()) outputPath = audioDirectory + File.separator + AUDIO_TOOL_TMP + System.currentTimeMillis();
 
         FileManager.writeFile(joinPath, joinData.toString());
-        FFmpeg.execute("-f", "concat", "-safe", "0", "-i", joinPath, "-c", "copy", outputPath);
+        FFmpeg.execute("-f concat -safe 0 -i" + joinPath + "-c copy" + outputPath);
         onCompleteCallback.onComplete(new File(outputPath));
         return this;
     }

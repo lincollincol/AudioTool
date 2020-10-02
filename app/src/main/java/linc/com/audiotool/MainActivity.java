@@ -11,6 +11,7 @@ import java.io.File;
 
 import linc.com.library.AudioTool;
 import linc.com.library.Duration;
+import linc.com.library.Echo;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,32 +26,25 @@ public class MainActivity extends AppCompatActivity {
                         Manifest.permission.WRITE_EXTERNAL_STORAGE
                 }, 1);
 
-        AudioTool.getInstance(this)
-                .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
-                .cutAudio(0, 0, new AudioTool.OnFileComplete() {
-                    @Override
-                    public void onComplete(File output) {
-
-                    }
-                })
-                .getDuration(Duration.SECONDS, new AudioTool.OnNumberComplete() {
-                    @Override
-                    public void onComplete(Long output) {
-                        System.out.println("Duration from audio (sec) = " + output);
-                    }
-                })
-                .getDuration(Duration.MILLIS, new AudioTool.OnNumberComplete() {
-                    @Override
-                    public void onComplete(Long output) {
-                        System.out.println("Duration from audio (millis) = " + output);
-                    }
-                })
-                .getDuration(Duration.MINUTES, new AudioTool.OnNumberComplete() {
-                    @Override
-                    public void onComplete(Long output) {
-                        System.out.println("Duration from audio (min) = " + output);
-                    }
-                })
-                .release();
+        try {
+            AudioTool.getInstance(this)
+                    .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
+                    .cutAudio(1, 60, null)
+                    .saveCurrentTo("/storage/emulated/0/Music/cut_25_s.mp3")
+    //                .changeAudioPitch(44100, 3, 1.24f, null)
+    //                .saveCurrentTo("/storage/emulated/0/Music/pitch_3.mp3")
+    //                .applyEchoEffect(Echo.ECHO_FEW_MOUNTAINS, null)
+    //                .saveCurrentTo("/storage/emulated/0/Music/echo_few.mp3")
+    //                .applyReverbEffect(0.5f, 0.7f, null)
+    //                .saveCurrentTo("/storage/emulated/0/Music/reverb.mp3")
+    //                .applyShifterEffect(1, 0.5f, null)
+    //                .saveCurrentTo("/storage/emulated/0/Music/shifter.mp3")
+    //                .applyVibratoEffect(1000, 0.5f, null)
+    //                .saveCurrentTo("/storage/emulated/0/Music/vibrato.mp3")
+    //                .generateWaveform(200, 400, "#fafafa", "/storage/emulated/0/Music/waveka.png", null)
+                    .release();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }
