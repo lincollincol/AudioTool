@@ -1,4 +1,4 @@
-package linc.com.library;
+package linc.com.library.types;
 
 public enum Duration {
     MILLIS, SECONDS, MINUTES

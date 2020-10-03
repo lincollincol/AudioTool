@@ -10,8 +10,7 @@ import androidx.core.app.ActivityCompat;
 import java.io.File;
 
 import linc.com.library.AudioTool;
-import linc.com.library.Duration;
-import linc.com.library.Echo;
+import linc.com.library.types.Echo;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -28,20 +27,22 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             AudioTool.getInstance(this)
-                    .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
-                    .cutAudio(1, 60, null)
-                    .saveCurrentTo("/storage/emulated/0/Music/cut_25_s.mp3")
-    //                .changeAudioPitch(44100, 3, 1.24f, null)
-    //                .saveCurrentTo("/storage/emulated/0/Music/pitch_3.mp3")
-    //                .applyEchoEffect(Echo.ECHO_FEW_MOUNTAINS, null)
-    //                .saveCurrentTo("/storage/emulated/0/Music/echo_few.mp3")
-    //                .applyReverbEffect(0.5f, 0.7f, null)
-    //                .saveCurrentTo("/storage/emulated/0/Music/reverb.mp3")
-    //                .applyShifterEffect(1, 0.5f, null)
-    //                .saveCurrentTo("/storage/emulated/0/Music/shifter.mp3")
-    //                .applyVibratoEffect(1000, 0.5f, null)
-    //                .saveCurrentTo("/storage/emulated/0/Music/vibrato.mp3")
-    //                .generateWaveform(200, 400, "#fafafa", "/storage/emulated/0/Music/waveka.png", null)
+                    .withAudio(new File("/storage/emulated/0/Music/cut_5_s.mp3"))
+//                    .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
+//                    .cutAudio(1, 5, null)
+//                    .saveCurrentTo("/storage/emulated/0/Music/cut_5_s.mp3")
+
+//                    .changeAudioPitch(44100, 3, 1.24f, null)
+//                    .saveCurrentTo("/storage/emulated/0/Music/pitch_3.mp3")
+
+//                    .applyEchoEffect(Echo.ECHO_FEW_MOUNTAINS, null)
+//                    .saveCurrentTo("/storage/emulated/0/Music/echo_few.mp3")
+
+                    .applyReverbEffect(0.5f, 0.7f, null)
+                    .saveCurrentTo("/storage/emulated/0/Music/reverb.mp3")
+
+
+
                     .release();
         } catch (Exception e) {
             e.printStackTrace();

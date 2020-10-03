@@ -1,16 +1,49 @@
 package linc.com.library;
 
+import android.content.Context;
+import android.content.res.AssetManager;
+import android.os.Environment;
+import android.util.Log;
+
+import androidx.annotation.RestrictTo;
+import androidx.core.content.ContextCompat;
+
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 
 import static linc.com.library.Constant.AUDIO_TOOL_BUFFER;
 import static linc.com.library.Constant.AUDIO_TOOL_TMP;
 
+/**
+ * Package private lib class
+ * File manipulator
+ */
 class FileManager {
+
+    static void validateInputFile(File inputFile) throws IOException {
+        if(!inputFile.exists() || inputFile.isDirectory())
+            throw new FileNotFoundException();
+    }
+
+    static void validateInputFile(String path) throws IOException {
+        validateInputFile(new File(path));
+    }
+
+    static void validateOutputFile(File inputFile) throws IOException {
+        if(!inputFile.getParentFile().exists() || inputFile.isDirectory())
+            throw new FileNotFoundException("Invalid output path or you use directory path instead of file path!");
+    }
+
+    static void validateOutputFile(String path) throws IOException {
+        validateOutputFile(new File(path));
+    }
 
     static void writeFile(String outputPath, String data) {
         try {
@@ -42,13 +75,9 @@ class FileManager {
         );
     }
 
-    static File overwriteFromBuffer(File sourceFile, File bufferFile) throws IOException {
-//        String sourcePath = sourceFile.getPath();
-//        sourceFile.delete();
-        File updated = copyFile(bufferFile, sourceFile);
+    static void overwriteFromBuffer(File sourceFile, File bufferFile) throws IOException {
+        copyFile(bufferFile, sourceFile);
         bufferFile.delete();
-        return updated;
-
     }
 
     static String getFileExtension(File file) {

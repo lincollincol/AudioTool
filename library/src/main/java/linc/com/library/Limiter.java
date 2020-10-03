@@ -1,5 +1,9 @@
 package linc.com.library;
 
+/**
+ * Package private lib class
+ * Math limits wrapper
+ */
 class Limiter {
 
     static float limit(float min, float max, float value) {
