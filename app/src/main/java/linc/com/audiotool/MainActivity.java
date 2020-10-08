@@ -31,17 +31,11 @@ public class MainActivity extends AppCompatActivity {
 //                    .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
 //                    .cutAudio(1, 5, null)
 //                    .saveCurrentTo("/storage/emulated/0/Music/cut_5_s.mp3")
-
-//                    .changeAudioPitch(44100, 3, 1.24f, null)
-//                    .saveCurrentTo("/storage/emulated/0/Music/pitch_3.mp3")
-
-//                    .applyEchoEffect(Echo.ECHO_FEW_MOUNTAINS, null)
-//                    .saveCurrentTo("/storage/emulated/0/Music/echo_few.mp3")
-
-                    .applyReverbEffect(0.5f, 0.7f, null)
-                    .saveCurrentTo("/storage/emulated/0/Music/reverb.mp3")
-
-
+                    .joinAudios(new String[]{
+                            "/storage/emulated/0/Music/reverse.mp3",
+                            "/storage/emulated/0/Music/bass.mp3",
+                            "/storage/emulated/0/Music/shifter.mp3"
+                    }, "/storage/emulated/0/Music/join.mp3", null)
 
                     .release();
         } catch (Exception e) {

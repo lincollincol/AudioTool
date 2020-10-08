@@ -55,6 +55,14 @@ class FileManager {
         }
     }
 
+    static void copyFile(InputStream in, OutputStream out) throws IOException {
+        byte[] buffer = new byte[1024];
+        int read;
+        while((read = in.read(buffer)) != -1){
+            out.write(buffer, 0, read);
+        }
+    }
+
     static File copyFile(File sourceFile, File destFile) throws IOException {
         FileChannel sourceChannel = new FileInputStream(sourceFile).getChannel();
         FileChannel destChannel = new FileOutputStream(destFile).getChannel();
@@ -106,6 +114,30 @@ class FileManager {
 
     static String addFileTitle(String path, String title) {
         return addFileTitle(new File(path), title);
+    }
+
+    /**
+     * Assets
+     */
+    static File bufferAssetAudio(Context context, String audioDirectory, String assetAudio) {
+        AssetManager assetManager = context.getAssets();
+        InputStream in = null;
+        OutputStream out = null;
+        try {
+            in = assetManager.open(assetAudio);
+            File outFile = new File(audioDirectory, AUDIO_TOOL_TMP + assetAudio);
+            out = new FileOutputStream(outFile);
+            copyFile(in, out);
+            in.close();
+            in = null;
+            out.flush();
+            out.close();
+            out = null;
+            return outFile;
+        } catch(IOException e) {
+            Log.e("tag", "Failed to copy asset file: reverb.mp3", e);
+            return null;
+        }
     }
 
 }

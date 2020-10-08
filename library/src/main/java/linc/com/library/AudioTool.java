@@ -316,22 +316,17 @@ public class AudioTool {
 
     public AudioTool applyReverbEffect(float audioDepth, float reverbDepth, @Nullable OnFileComplete onCompleteCallback) throws IOException {
 //        ffmpeg -y -i kygo.mp3 -i lev_cut.mp3 -filter_complex '[0] [1] afir=dry=0.1:wet=0.1' reverb.mp3
-        // todo wrap
-        String effectPath = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE
-                + File.pathSeparator
-                + File.separator
-                + context.getPackageName()
-                + "/raw/"
-                + "audiotool_ir_reverb.mp3"
-        ).getPath();
         audioDepth = Limiter.limit(0f, 1f, audioDepth);
         reverbDepth = Limiter.limit(0f, 1f, reverbDepth);
 
+        File reverbEffect = FileManager.bufferAssetAudio(context, audioDirectory, "audiotool_ir_reverb.mp3");
+
         String command = String.format(Locale.US,
                 "-y -i %s -i %s -filter_complex '[0] [1] afir=dry=%f:wet=%f'",
-                audio.getPath(), effectPath, audioDepth, reverbDepth
+                audio.getPath(), reverbEffect.getPath(), audioDepth, reverbDepth
         );
         FFmpegExecutor.executeCommandWithBuffer(command, audio);
+
 
 //        FFmpeg.execute("-y -i" + audio.getPath() + "-i" + effectPath + "-filter_complex '[0] [1] afir=dry=" + audioDepth + ":wet=" + reverbDepth + "'" + audio.getPath());
         onResultFile(onCompleteCallback);
@@ -386,8 +381,8 @@ public class AudioTool {
         if(outputPath.isEmpty()) outputPath = audioDirectory + File.separator + AUDIO_TOOL_TMP + System.currentTimeMillis();
 
         FileManager.writeFile(joinPath, joinData.toString());
-        FFmpeg.execute("-f concat -safe 0 -i" + joinPath + "-c copy" + outputPath);
-        onCompleteCallback.onComplete(new File(outputPath));
+        FFmpeg.execute("-y -f concat -safe 0 -i " + joinPath + " -c copy " + outputPath);
+        if(onCompleteCallback != null) onCompleteCallback.onComplete(new File(outputPath));
         return this;
     }
 
