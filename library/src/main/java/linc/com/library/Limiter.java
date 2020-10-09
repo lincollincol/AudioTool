@@ -3,6 +3,7 @@ package linc.com.library;
 /**
  * Package private lib class
  * Math limits wrapper
+ * Limit input value by max and min scope
  */
 class Limiter {
 

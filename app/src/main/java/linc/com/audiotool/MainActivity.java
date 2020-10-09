@@ -8,8 +8,12 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 
 import linc.com.library.AudioTool;
+import linc.com.library.callback.OnFileComplete;
+import linc.com.library.callback.OnListComplete;
 import linc.com.library.types.Echo;
 
 public class MainActivity extends AppCompatActivity {
@@ -27,16 +31,13 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             AudioTool.getInstance(this)
-                    .withAudio(new File("/storage/emulated/0/Music/cut_5_s.mp3"))
-//                    .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
-//                    .cutAudio(1, 5, null)
-//                    .saveCurrentTo("/storage/emulated/0/Music/cut_5_s.mp3")
-                    .joinAudios(new String[]{
-                            "/storage/emulated/0/Music/reverse.mp3",
-                            "/storage/emulated/0/Music/bass.mp3",
-                            "/storage/emulated/0/Music/shifter.mp3"
-                    }, "/storage/emulated/0/Music/join.mp3", null)
-
+                    .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
+                    .getMaxLevelData(1, "/storage/emulated/0/Music/bytes.txt", new OnListComplete() {
+                        @Override
+                        public void onComplete(List<Float> output) {
+                            System.out.println(Arrays.toString(output.toArray()));
+                        }
+                    })
                     .release();
         } catch (Exception e) {
             e.printStackTrace();

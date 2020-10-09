@@ -20,6 +20,8 @@ import java.nio.channels.FileChannel;
 
 import static linc.com.library.Constant.AUDIO_TOOL_BUFFER;
 import static linc.com.library.Constant.AUDIO_TOOL_TMP;
+import static linc.com.library.Constant.DOT;
+import static linc.com.library.Constant.EMPTY_STRING;
 
 /**
  * Package private lib class
@@ -90,9 +92,9 @@ class FileManager {
 
     static String getFileExtension(File file) {
         String name = file.getName();
-        int lastIndexOf = name.lastIndexOf(".");
+        int lastIndexOf = name.lastIndexOf(DOT);
         if (lastIndexOf == -1) {
-            return ""; // empty extension
+            return EMPTY_STRING; // Empty extension
         }
         return name.substring(lastIndexOf);
     }
@@ -106,7 +108,7 @@ class FileManager {
     }
 
     static String addFileTitle(File file, String title) {
-        if(file.getPath().charAt(file.getPath().length() - 1) == '/') {
+        if(file.getPath().charAt(file.getPath().length() - 1) == File.pathSeparatorChar) {
             return file.getPath() + title;
         }
         return file.getPath() + File.separator + title;
@@ -116,9 +118,6 @@ class FileManager {
         return addFileTitle(new File(path), title);
     }
 
-    /**
-     * Assets
-     */
     static File bufferAssetAudio(Context context, String audioDirectory, String assetAudio) {
         AssetManager assetManager = context.getAssets();
         InputStream in = null;
@@ -135,7 +134,6 @@ class FileManager {
             out = null;
             return outFile;
         } catch(IOException e) {
-            Log.e("tag", "Failed to copy asset file: reverb.mp3", e);
             return null;
         }
     }
