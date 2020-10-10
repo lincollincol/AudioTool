@@ -9,14 +9,99 @@
 
 AudioTool - an android library that provides useful audio processing functions. This library based on FFMPEG and uses <a href="https://github.com/tanersener/mobile-ffmpeg">mobile-ffmpeg library</a>
 
-### AudioTool provide such functions:
-* Filters (filter, bass, noise, vocal, noise)
-* Effects (shifter, reverb, echo, reverse)
-* Eq (bass, volume, normalize, pitch, speed)
-* Modificators (cut, video 2 audio)
-* other (waveform, duration, max levels, join, exec ffmpeg / ffprobe)
+### AudioTool provides:
 
+<ul>
+  <li> <b>Filters</b>
+    <ul>
+      <li>filterAudio(. . .)</li>
+      <li>removeAudioNoise(. . .) - remove noise from audio</li>
+      <li>normalizeAudioVolume(. . .) - normalize audio volume</li>
+    </ul>
+  </li>
+  <li> <b>Equalizer</b>
+    <ul>
+      <li>changeAudioBass(. . .) - reduce or increase audio bass</li>
+      <li>changeAudioVolume(. . .) - reduce or increase audio volume</li>
+      <li>changeAudioPitch(. . .) - reduce or increase audio pitch</li>
+      <li>changeAudioSpeed(. . .) - reduce or increase audio speed</li>
+    </ul>
+  </li>
+  <li> <b>Effects</b>
+     <ul>
+      <li>applyShifterEffect(. . .) - apply audio pan shifter effect</li>
+      <li>applyReverbEffect(. . .) - apply audio reverb effect</li>
+      <li>applyEchoEffect(. . .) - apply audio echo effect</li>
+      <li>reverseAudio(. . .) - reverse audio</li>
+    </ul>
+  </li>
+    <li> <b>Modificators</b>
+     <ul>
+      <li>cutAudio(. . .) - cut audio</li>
+      <li>convertVideoToAudio(. . .) - convert video to audio</li>
+      <li>joinAudios(. . .) - join few audio files to single</li>
+    </ul>
+  </li>
+  </li>
+    <li> <b>Other</b>
+     <ul>
+      <li>generateWaveform(. . .) - generate image waveform (png)</li>
+      <li>getMaxLevelData(. . .) - retrive audio max level data (data can be used to draw waveform)</li>
+      <li>getDuration(. . .) - retrive audio duration</li>
+      <li>executeFFmpeg(. . .) - execute ffmpeg command</li>
+      <li>executeFFprobe(. . .) - execute ffprobe command</li>
+    </ul>
+  </li>
+</ul>
 
+# Example
+## Note: every function will modify previous audio.
+### Input audio -> cut -> apply effect -> filter -> output audio with all these modifications
+``` java
+AudioTool.getInstance(this)
+  .withAudio(new File("/storage/emulated/0/Music/Linc - AudioTool.mp3"))
+  .removeVocal(new OnFileComplete() {
+    @Override
+    public void onComplete(File output) {
+      // Output file - audio without vocal
+    }
+  })
+  .applyEchoEffect(Echo.ECHO_OPEN_AIR, new OnFileComplete() {
+    @Override
+    public void onComplete(File output) {
+      // Output file - audio file with echo effect and without vocal 
+    }
+  })
+                      
+  /* calls */
+  .release();
+```
+#### If you want to save current audio file state - use saveCurrentTo(path). Current audio will be saved as separate file and AudioTool continue modify input file from withAudio() parameters.
+``` java
+AudioTool.getInstance(this)
+  .withAudio(new File("/storage/emulated/0/Music/Linc - AudioTool.mp3"))
+  .removeVocal(output-> {/* do something with output */})
+  .applyEchoEffect(Echo.ECHO_OPEN_AIR, output-> {/* do something with output */})
+  .saveCurrentTo("/storage/emulated/0/Music/NewAudio.mp3") // Audio file with echo and without vocal
+  .release();
+```
+#### You can save audio to new file after every function call
+``` java
+AudioTool.getInstance(this)
+  .withAudio(new File("/storage/emulated/0/Music/Linc - AudioTool.mp3"))
+  .removeVocal(output-> {/* do something with output */})
+  .saveCurrentTo("/storage/emulated/0/Music/Instrumental.mp3") // Audio file without vocal
+  .applyEchoEffect(Echo.ECHO_OPEN_AIR, output-> {/* do something with output */})
+  .saveCurrentTo("/storage/emulated/0/Music/NewAudio.mp3") // Audio file with echo and without vocal
+  .release();
+```
+#### Also, don't forget to call release() function when you finish work with AudioTool. The function remove buffer files from storage and clear other resources.
+``` java
+AudioTool.getInstance(this)
+  .withAudio(new File("/storage/emulated/0/Music/Linc - AudioTool.mp3"))
+  /* calls */
+  .release(); // Always call this function 
+```
 # Download
 ## Gradle
 ``` groovy
