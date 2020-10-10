@@ -461,6 +461,14 @@ public class AudioTool {
         return this;
     }
 
+    /**
+     * @param command ffprobe command
+     */
+    public AudioTool executeFFprobe(String command) {
+        FFprobe.execute(command);
+        return this;
+    }
+
     private long getDurationMillis() {
         MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
         mediaMetadataRetriever.setDataSource(audio.getAbsolutePath());

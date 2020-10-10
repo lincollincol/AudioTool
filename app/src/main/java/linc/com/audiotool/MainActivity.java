@@ -12,9 +12,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import linc.com.library.AudioTool;
-import linc.com.library.callback.OnFileComplete;
 import linc.com.library.callback.OnListComplete;
-import linc.com.library.types.Echo;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,13 +29,8 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             AudioTool.getInstance(this)
-                    .withAudio(new File("/storage/emulated/0/Music/kygo.mp3"))
-                    .getMaxLevelData(1, "/storage/emulated/0/Music/bytes.txt", new OnListComplete() {
-                        @Override
-                        public void onComplete(List<Float> output) {
-                            System.out.println(Arrays.toString(output.toArray()));
-                        }
-                    })
+                    .withAudio(new File("/storage/emulated/0/Music/Linc - AudioTool.mp3"))
+                    /* calls */
                     .release();
         } catch (Exception e) {
             e.printStackTrace();
