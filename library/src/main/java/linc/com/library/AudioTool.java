@@ -23,6 +23,7 @@ import linc.com.library.callback.OnNumberComplete;
 import linc.com.library.callback.OnListComplete;
 import linc.com.library.types.Duration;
 import linc.com.library.types.Echo;
+import linc.com.library.types.Pitch;
 
 import static linc.com.library.Constant.AUDIO_TOOL_LOCAL_EFFECT_REVERB;
 import static linc.com.library.Constant.AUDIO_TOOL_LOCAL_JOIN_FILE;
@@ -206,15 +207,17 @@ public class AudioTool {
 
     /**
      * @param sampleRate         audio sample rate
-     * @param pitch              audio pitch value
-     * @param tempo              audio speed value
+     * @param deltaRate          audio custom rate value
+     * @param deltaTempo         audio custom tempo value
      * @param onCompleteCallback lambda with result audio
      */
-    public AudioTool changeAudioPitch(int sampleRate, float pitch, float tempo, @Nullable OnFileComplete onCompleteCallback) throws IOException {
-        tempo = Limiter.limit(0.5f, 2, tempo);
+    public AudioTool changeAudioPitch(int sampleRate, float deltaRate, float deltaTempo, @Nullable OnFileComplete onCompleteCallback) throws IOException {
+        deltaTempo = Limiter.limit(-12f, 12f, deltaTempo);
+        deltaRate = Limiter.limit(-12f, 12f, deltaRate);
+
         String command = String.format(Locale.US,
-                "-y -i %s -filter_complex asetrate=%d*%f^(-10/12),atempo=%f^(-10/12)",
-                audio.getPath(), sampleRate, pitch, tempo
+                "-y -i %s -filter_complex asetrate=%d*2^(%f/12),atempo=1/2^(%f/12)",
+                audio.getPath(), sampleRate, deltaRate, deltaTempo
         );
         FFmpegExecutor.executeCommandWithBuffer(command, audio);
         onResultFile(onCompleteCallback);
@@ -222,11 +225,33 @@ public class AudioTool {
     }
 
     /**
-     * @param bass               audio bass
-     * @param width              audio bass width
-     * @param frequency          audio frequency
+     * @param sampleRate         audio sample rate
+     * @param pitch              audio semitone value
      * @param onCompleteCallback lambda with result audio
      */
+    public AudioTool changeAudioPitch(int sampleRate, float pitch, @Nullable OnFileComplete onCompleteCallback) throws IOException {
+        changeAudioPitch(sampleRate, pitch, pitch, onCompleteCallback);
+        return this;
+    }
+
+    /**
+     * @param sampleRate         audio sample rate
+     * @param pitchValue         audio semitone value
+     * @param pitch              pitch type: UP or DOWN
+     * @param onCompleteCallback lambda with result audio
+     */
+    public AudioTool changeAudioPitch(int sampleRate, float pitchValue, Pitch pitch, @Nullable OnFileComplete onCompleteCallback) throws IOException {
+        pitchValue = pitch == Pitch.UP ? Math.abs(pitchValue) : -Math.abs(pitchValue);
+        changeAudioPitch(sampleRate, pitchValue, pitchValue, onCompleteCallback);
+        return this;
+    }
+
+        /**
+         * @param bass               audio bass
+         * @param width              audio bass width
+         * @param frequency          audio frequency
+         * @param onCompleteCallback lambda with result audio
+         */
     public AudioTool changeAudioBass(float bass, float width, int frequency, @Nullable OnFileComplete onCompleteCallback) throws IOException {
         bass = Limiter.limit(-20f, 20f, bass);
         width = Limiter.limit(0f, 1f, width);

@@ -7,12 +7,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.List;
-
 import linc.com.library.AudioTool;
-import linc.com.library.callback.OnListComplete;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,8 +24,11 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             AudioTool.getInstance(this)
-                    .withAudio(new File("/storage/emulated/0/Music/Linc - AudioTool.mp3"))
-                    /* calls */
+                    .withAudio("/storage/emulated/0/Music/level.mp3")
+//                    .changeAudioPitch(44100, -0.86883157f, -0.8699582800000001f, null)
+//                    .changeAudioPitch(44100, -2.86883157f, null)
+//                    .changeAudioPitch(44100, -2.86883157f, Pitch.DOWN, null)
+                    .saveCurrentTo("/storage/emulated/0/Music/level_pitch.mp3")
                     .release();
         } catch (Exception e) {
             e.printStackTrace();
