@@ -95,6 +95,14 @@ AudioTool.getInstance(this)
   .saveCurrentTo("/storage/emulated/0/Music/NewAudio.mp3") // Audio file with echo and without vocal
   .release();
 ```
+#### If don't need result from callbacks, you can pass null as a parameter
+``` java
+AudioTool.getInstance(this)
+  .withAudio(new File("/storage/emulated/0/Music/Linc - AudioTool.mp3"))
+  .removeVocal(null) // It's ok. 
+  .saveCurrentTo("/storage/emulated/0/Music/Instrumental.mp3") // Save audio without vocal to local file 
+  .release();
+```
 #### Also, don't forget to call release() function when you finish work with AudioTool. The function remove buffer files from storage and clear other resources.
 ``` java
 AudioTool.getInstance(this)
@@ -102,6 +110,7 @@ AudioTool.getInstance(this)
   /* calls */
   .release(); // Always call this function 
 ```
+
 # Download
 ## Gradle
 ``` groovy
