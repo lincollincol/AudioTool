@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import linc.com.library.AudioTool;
+import linc.com.library.callback.OnFFmpegComplete;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -29,6 +30,17 @@ public class MainActivity extends AppCompatActivity {
 //                    .changeAudioPitch(44100, -2.86883157f, null)
 //                    .changeAudioPitch(44100, -2.86883157f, Pitch.DOWN, null)
                     .saveCurrentTo("/storage/emulated/0/Music/level_pitch.mp3")
+                    .executeFFmpeg("", new OnFFmpegComplete() {
+                        @Override
+                        public void onSuccess() {
+
+                        }
+
+                        @Override
+                        public void onFailure(String message) {
+
+                        }
+                    })
                     .release();
         } catch (Exception e) {
             e.printStackTrace();

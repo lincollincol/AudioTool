@@ -3,6 +3,7 @@ package linc.com.library;
 import android.content.Context;
 import android.media.MediaMetadataRetriever;
 import android.os.Environment;
+import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
@@ -18,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import linc.com.library.callback.OnFFmpegComplete;
 import linc.com.library.callback.OnFileComplete;
 import linc.com.library.callback.OnNumberComplete;
 import linc.com.library.callback.OnListComplete;
@@ -25,6 +27,7 @@ import linc.com.library.types.Duration;
 import linc.com.library.types.Echo;
 import linc.com.library.types.Pitch;
 
+import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS;
 import static linc.com.library.Constant.AUDIO_TOOL_LOCAL_EFFECT_REVERB;
 import static linc.com.library.Constant.AUDIO_TOOL_LOCAL_JOIN_FILE;
 import static linc.com.library.Constant.AUDIO_TOOL_RATE_PER_FRAME;
@@ -47,6 +50,7 @@ public class AudioTool {
 
     /**
      * Set audio file source
+     *
      * @param sourceAudio path to the source file
      */
     public AudioTool withAudio(String sourceAudio) throws IOException {
@@ -69,6 +73,7 @@ public class AudioTool {
 
     /**
      * Save output file
+     *
      * @param fullPath path to the output directory with file name
      */
     public AudioTool saveCurrentTo(String fullPath) throws IOException {
@@ -83,8 +88,8 @@ public class AudioTool {
     public void release() {
         File tmpStorage = new File(audioDirectory);
 
-        for(File tmpFile : tmpStorage.listFiles()) {
-            if(tmpFile.getName().startsWith(AUDIO_TOOL_TMP))
+        for (File tmpFile : tmpStorage.listFiles()) {
+            if (tmpFile.getName().startsWith(AUDIO_TOOL_TMP))
                 tmpFile.delete();
         }
 
@@ -106,8 +111,8 @@ public class AudioTool {
     }
 
     /**
-     * @param start     format -> "00:01:00"
-     * @param duration  format -> "00:00:30"
+     * @param start    format -> "00:01:00"
+     * @param duration format -> "00:00:30"
      * @example Cut 30 seconds audio from 1:00 min. Start 1 min / end 1:30
      */
     public AudioTool cutAudio(String start, String duration, @Nullable OnFileComplete onCompleteCallback) throws IOException {
@@ -139,7 +144,7 @@ public class AudioTool {
                 audio.getPath(), color, width, height, outputPath
         );
         FFmpegExecutor.executeCommand(command);
-        if(onCompleteCallback != null) onCompleteCallback.onComplete(new File(outputPath));
+        if (onCompleteCallback != null) onCompleteCallback.onComplete(new File(outputPath));
         return this;
     }
 
@@ -246,12 +251,12 @@ public class AudioTool {
         return this;
     }
 
-        /**
-         * @param bass               audio bass
-         * @param width              audio bass width
-         * @param frequency          audio frequency
-         * @param onCompleteCallback lambda with result audio
-         */
+    /**
+     * @param bass               audio bass
+     * @param width              audio bass width
+     * @param frequency          audio frequency
+     * @param onCompleteCallback lambda with result audio
+     */
     public AudioTool changeAudioBass(float bass, float width, int frequency, @Nullable OnFileComplete onCompleteCallback) throws IOException {
         bass = Limiter.limit(-20f, 20f, bass);
         width = Limiter.limit(0f, 1f, width);
@@ -292,7 +297,7 @@ public class AudioTool {
      * @param lowpass            low pass of audio
      * @param onCompleteCallback lambda with result audio
      */
-    public AudioTool filterAudio(int highpass, int lowpass, @Nullable OnFileComplete onCompleteCallback) throws IOException  {
+    public AudioTool filterAudio(int highpass, int lowpass, @Nullable OnFileComplete onCompleteCallback) throws IOException {
         highpass = Limiter.limit(0, 999999, highpass);
         lowpass = Limiter.limit(0, 999999, lowpass);
 
@@ -325,10 +330,18 @@ public class AudioTool {
     public AudioTool applyEchoEffect(Echo echo, @Nullable OnFileComplete onCompleteCallback) throws IOException {
         String filter;
         switch (echo) {
-            case ECHO_TWICE_INSTRUMENTS: filter = "\"aecho=0.8:0.88:60:0.4\""; break;
-            case ECHO_METALLIC: filter = "\"aecho=0.8:0.88:6:0.4\""; break;
-            case ECHO_OPEN_AIR: filter = "\"aecho=0.8:0.9:1000:0.3\""; break;
-            default: filter = "\"aecho=0.8:0.9:1000|1800:0.3|0.25\""; break;
+            case ECHO_TWICE_INSTRUMENTS:
+                filter = "\"aecho=0.8:0.88:60:0.4\"";
+                break;
+            case ECHO_METALLIC:
+                filter = "\"aecho=0.8:0.88:6:0.4\"";
+                break;
+            case ECHO_OPEN_AIR:
+                filter = "\"aecho=0.8:0.9:1000:0.3\"";
+                break;
+            default:
+                filter = "\"aecho=0.8:0.9:1000|1800:0.3|0.25\"";
+                break;
         }
 
         String command = String.format(Locale.US,
@@ -365,7 +378,7 @@ public class AudioTool {
      * @param onCompleteCallback lambda with result audio
      */
     public AudioTool applyShifterEffect(int transitionTime, float width, @Nullable OnFileComplete onCompleteCallback) throws IOException {
-        float hz =  1 / (float) transitionTime;
+        float hz = 1 / (float) transitionTime;
         hz = Limiter.limit(0.01f, 100f, hz);
         width = Limiter.limit(0.1f, 2f, width);
 
@@ -404,10 +417,10 @@ public class AudioTool {
         StringBuilder joinData = new StringBuilder();
 
         // Create files sequence command
-        for(String path : audios) {
+        for (String path : audios) {
             joinData.append("file ")
-              .append(path)
-              .append("\n");
+                    .append(path)
+                    .append("\n");
         }
 
         // Copy audio effect to internal storage
@@ -419,7 +432,7 @@ public class AudioTool {
         );
 
         FFmpeg.execute(command);
-        if(onCompleteCallback != null) onCompleteCallback.onComplete(new File(outputPath));
+        if (onCompleteCallback != null) onCompleteCallback.onComplete(new File(outputPath));
         return this;
     }
 
@@ -433,11 +446,14 @@ public class AudioTool {
      */
     public AudioTool getDuration(Duration duration, OnNumberComplete onNumberComplete) {
         switch (duration) {
-            case MILLIS: onNumberComplete.onComplete(getDurationMillis());
+            case MILLIS:
+                onNumberComplete.onComplete(getDurationMillis());
                 break;
-            case SECONDS: onNumberComplete.onComplete(getDurationMillis() / 1000);
+            case SECONDS:
+                onNumberComplete.onComplete(getDurationMillis() / 1000);
                 break;
-            case MINUTES: onNumberComplete.onComplete((getDurationMillis() % (1000 * 60 * 60)) / (1000 * 60));
+            case MINUTES:
+                onNumberComplete.onComplete((getDurationMillis() % (1000 * 60 * 60)) / (1000 * 60));
                 break;
         }
         return this;
@@ -449,10 +465,10 @@ public class AudioTool {
      * @param onListComplete result callback
      */
     public AudioTool getMaxLevelData(int fps, String outputPath, OnListComplete onListComplete) throws IOException {
-        if(outputPath != null) FileManager.validateOutputFile(outputPath);
+        if (outputPath != null) FileManager.validateOutputFile(outputPath);
         fps = Limiter.limit(1, 20, fps);
 
-        String command = String.format(Locale.US,"-f lavfi -i amovie=%s,asetnsamples=%d,astats=metadata=1:reset=1 -show_entries frame_tags=lavfi.astats.Overall.MAX_level -of csv=p=0",
+        String command = String.format(Locale.US, "-f lavfi -i amovie=%s,asetnsamples=%d,astats=metadata=1:reset=1 -show_entries frame_tags=lavfi.astats.Overall.MAX_level -of csv=p=0",
                 audio.getPath(),
                 (AUDIO_TOOL_RATE_PER_FRAME / fps)
         );
@@ -466,8 +482,8 @@ public class AudioTool {
         // Get data from log
         String log = Config.getLastCommandOutput();
 
-        if(outputPath != null) FileManager.writeFile(outputPath, log);
-        if(onListComplete == null) return this;
+        if (outputPath != null) FileManager.writeFile(outputPath, log);
+        if (onListComplete == null) return this;
 
         // Prepare audio data as list
         List<Float> audioData = new ArrayList<>();
@@ -481,8 +497,15 @@ public class AudioTool {
     /**
      * @param command ffmpeg command
      */
-    public AudioTool executeFFmpeg(String command) {
-        FFmpeg.execute(command);
+    public AudioTool executeFFmpeg(String command, OnFFmpegComplete onFFmpegComplete) {
+        long rc = FFmpeg.execute(command);
+
+        if (rc == RETURN_CODE_SUCCESS) {
+            onFFmpegComplete.onSuccess();
+        } else {
+            Config.printLastCommandOutput(Log.INFO);
+            onFFmpegComplete.onFailure(String.format("Command execution failed with rc=%d and the output below.", rc));
+        }
         return this;
     }
 
@@ -502,7 +525,7 @@ public class AudioTool {
     }
 
     private void onResultFile(@Nullable OnFileComplete onCompleteCallback) {
-        if(onCompleteCallback != null) {
+        if (onCompleteCallback != null) {
             onCompleteCallback.onComplete(audio);
         }
     }
