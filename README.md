@@ -122,7 +122,7 @@ allprojects {
 ```
 ``` groovy
 dependencies {
-  implementation 'com.github.lincollincol:AudioTool:1.0'
+  implementation 'com.github.lincollincol:AudioTool:1.1'
 }
 ```
 
@@ -139,7 +139,7 @@ dependencies {
 <dependency>
   <groupId>com.github.lincollincol</groupId>
   <artifactId>AudioTool</artifactId>
-  <version>1.0</version>
+  <version>1.1</version>
 </dependency>
 ```
 ## Permissions
