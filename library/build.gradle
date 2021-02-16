@@ -31,5 +31,4 @@ android {
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
     implementation 'androidx.appcompat:appcompat:1.2.0'
-    implementation 'com.arthenica:mobile-ffmpeg-full:4.3.1.LTS'
 }

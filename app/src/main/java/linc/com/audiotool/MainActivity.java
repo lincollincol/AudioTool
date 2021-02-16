@@ -1,13 +1,30 @@
 package linc.com.audiotool;
 
 import android.Manifest;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
+import android.view.View;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
+//import com.arthenica.mobileffmpeg.Config;
+//import com.arthenica.mobileffmpeg.FFprobe;
+//import com.arthenica.mobileffmpeg.Level;
+
+import java.util.Arrays;
+import java.util.List;
+
 import linc.com.library.AudioTool;
+import linc.com.library.callback.OnFileComplete;
+import linc.com.library.callback.OnListComplete;
+import linc.com.library.callback.OnNumberComplete;
+import linc.com.library.types.Duration;
+import linc.com.library.types.Echo;
+
+//import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,16 +39,17 @@ public class MainActivity extends AppCompatActivity {
                         Manifest.permission.WRITE_EXTERNAL_STORAGE
                 }, 1);
 
+
+
         try {
             AudioTool.getInstance(this)
-                    .withAudio("/storage/emulated/0/Music/level.mp3")
-//                    .changeAudioPitch(44100, -0.86883157f, -0.8699582800000001f, null)
-//                    .changeAudioPitch(44100, -2.86883157f, null)
-//                    .changeAudioPitch(44100, -2.86883157f, Pitch.DOWN, null)
-                    .saveCurrentTo("/storage/emulated/0/Music/level_pitch.mp3")
+                    .withAudio("/storage/emulated/0/Music/kygo.mp3")
+                    .applyEchoEffect(Echo.ECHO_FEW_MOUNTAINS, null)
+                    .saveCurrentTo("/storage/emulated/0/Music/echo.mp3")
                     .release();
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 }

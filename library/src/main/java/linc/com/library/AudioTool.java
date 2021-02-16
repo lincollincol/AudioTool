@@ -7,20 +7,20 @@ import android.os.Environment;
 import androidx.annotation.Nullable;
 import androidx.core.content.ContextCompat;
 
-import com.arthenica.mobileffmpeg.Config;
-import com.arthenica.mobileffmpeg.FFmpeg;
-import com.arthenica.mobileffmpeg.FFprobe;
-import com.arthenica.mobileffmpeg.Level;
-
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import linc.com.library.callback.OnFileComplete;
 import linc.com.library.callback.OnNumberComplete;
 import linc.com.library.callback.OnListComplete;
+import linc.com.library.ffmpeg.LogCallback;
+import linc.com.library.ffmpeg.LogLevel;
 import linc.com.library.types.Duration;
 import linc.com.library.types.Echo;
 import linc.com.library.types.Pitch;
@@ -29,6 +29,10 @@ import static linc.com.library.Constant.AUDIO_TOOL_LOCAL_EFFECT_REVERB;
 import static linc.com.library.Constant.AUDIO_TOOL_LOCAL_JOIN_FILE;
 import static linc.com.library.Constant.AUDIO_TOOL_RATE_PER_FRAME;
 import static linc.com.library.Constant.AUDIO_TOOL_TMP;
+import static linc.com.library.Constant.AV_LOG_QUIET;
+import static linc.com.library.Constant.CONFIG_CLASS;
+import static linc.com.library.Constant.FFMPEG_CLASS;
+import static linc.com.library.Constant.FFPROBE_CLASS;
 
 public class AudioTool {
 
@@ -36,13 +40,35 @@ public class AudioTool {
     private File audio;
     private String audioDirectory;
 
-    private AudioTool(Context context) {
-        this.context = context;
-        this.audioDirectory = ContextCompat.getExternalFilesDirs(context, Environment.DIRECTORY_MUSIC)[0].getPath();
+    private AudioTool(Context context) throws FFmpegNotFoundException{
+        this(context,
+                FFmpegReflectionManager.provideClassByName(FFMPEG_CLASS),
+                FFmpegReflectionManager.provideClassByName(FFPROBE_CLASS),
+                FFmpegReflectionManager.provideClassByName(CONFIG_CLASS)
+        );
+
     }
 
-    public static AudioTool getInstance(Context context) {
+    private AudioTool(Context context, Class<?> ffmpeg, Class<?> ffprobe, Class<?> config) throws FFmpegNotFoundException {
+        this.context = context;
+        this.audioDirectory = ContextCompat.getExternalFilesDirs(context, Environment.DIRECTORY_MUSIC)[0].getPath();
+        FFmpegReflectionManager.ffmpeg = ffmpeg;
+        FFmpegReflectionManager.ffprobe = ffprobe;
+        FFmpegReflectionManager.config = config;
+        FFmpegReflectionManager.initLogLevel();
+    }
+
+    public static AudioTool getInstance(Context context) throws FFmpegNotFoundException {
         return new AudioTool(context);
+    }
+
+    public static AudioTool getInstance(
+            Context context,
+            Class<?> ffmpeg,
+            Class<?> ffprobe,
+            Class<?> config
+    ) throws FFmpegNotFoundException {
+        return new AudioTool(context, ffmpeg, ffprobe, config);
     }
 
     /**
@@ -418,7 +444,7 @@ public class AudioTool {
                 joinPath, outputPath
         );
 
-        FFmpeg.execute(command);
+        FFmpegReflectionManager.executeFFmpeg(command);
         if(onCompleteCallback != null) onCompleteCallback.onComplete(new File(outputPath));
         return this;
     }
@@ -458,13 +484,12 @@ public class AudioTool {
         );
 
         // Setup log
-        Config.enableRedirection();
-        Config.setLogLevel(Level.AV_LOG_QUIET);
-
-        FFprobe.execute(command);
+        FFmpegReflectionManager.Config.enableRedirection();
+        FFmpegReflectionManager.Config.setLogLevel(AV_LOG_QUIET);
+        FFmpegReflectionManager.executeFFprobe(command);
 
         // Get data from log
-        String log = Config.getLastCommandOutput();
+        String log = FFmpegReflectionManager.Config.getLastCommandOutput();
 
         if(outputPath != null) FileManager.writeFile(outputPath, log);
         if(onListComplete == null) return this;
@@ -472,25 +497,9 @@ public class AudioTool {
         // Prepare audio data as list
         List<Float> audioData = new ArrayList<>();
         for (String temp : log.split("\n")) {
-            audioData.add(temp.isEmpty() ? 0 : Float.parseFloat(temp));
+            audioData.add(temp.isEmpty() ? 0f : Float.parseFloat(temp));
         }
         onListComplete.onComplete(audioData);
-        return this;
-    }
-
-    /**
-     * @param command ffmpeg command
-     */
-    public AudioTool executeFFmpeg(String command) {
-        FFmpeg.execute(command);
-        return this;
-    }
-
-    /**
-     * @param command ffprobe command
-     */
-    public AudioTool executeFFprobe(String command) {
-        FFprobe.execute(command);
         return this;
     }
 
