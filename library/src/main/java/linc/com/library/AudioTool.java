@@ -19,8 +19,6 @@ import java.util.Map;
 import linc.com.library.callback.OnFileComplete;
 import linc.com.library.callback.OnNumberComplete;
 import linc.com.library.callback.OnListComplete;
-import linc.com.library.ffmpeg.LogCallback;
-import linc.com.library.ffmpeg.LogLevel;
 import linc.com.library.types.Duration;
 import linc.com.library.types.Echo;
 import linc.com.library.types.Pitch;

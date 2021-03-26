@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 29
-    buildToolsVersion "29.0.3"
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
 
     defaultConfig {
         applicationId "linc.com.audiotool"
         minSdkVersion 21
-        targetSdkVersion 29
+        targetSdkVersion 30
         versionCode 1
         versionName "1.0"
 
@@ -24,10 +24,10 @@ android {
 }
 
 dependencies {
-    implementation project(":library")
+//    implementation project(":library")
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.arthenica:mobile-ffmpeg-full:4.3.1.LTS'
-//    implementation 'com.github.lincollincol:AudioTool:1.2'
+    implementation 'com.github.lincollincol:AudioTool:1.2'
 }

@@ -10,10 +10,6 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-//import com.arthenica.mobileffmpeg.Config;
-//import com.arthenica.mobileffmpeg.FFprobe;
-//import com.arthenica.mobileffmpeg.Level;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -23,8 +19,6 @@ import linc.com.library.callback.OnListComplete;
 import linc.com.library.callback.OnNumberComplete;
 import linc.com.library.types.Duration;
 import linc.com.library.types.Echo;
-
-//import static com.arthenica.mobileffmpeg.Config.RETURN_CODE_SUCCESS;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -39,13 +33,11 @@ public class MainActivity extends AppCompatActivity {
                         Manifest.permission.WRITE_EXTERNAL_STORAGE
                 }, 1);
 
-
-
         try {
             AudioTool.getInstance(this)
-                    .withAudio("/storage/emulated/0/Music/kygo.mp3")
+                    .withAudio("/storage/emulated/0/Music/Linc - AudioTool.mp3")
                     .applyEchoEffect(Echo.ECHO_FEW_MOUNTAINS, null)
-                    .saveCurrentTo("/storage/emulated/0/Music/echo.mp3")
+                    .saveCurrentTo("/storage/emulated/0/Music/Linc - AudioTool_With_Echo.mp3")
                     .release();
         } catch (Exception e) {
             e.printStackTrace();
