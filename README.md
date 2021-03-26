@@ -122,7 +122,7 @@ allprojects {
 ```
 ``` groovy
 dependencies {
-  implementation 'com.github.lincollincol:AudioTool:1.2'
+  implementation 'com.github.lincollincol:AudioTool:1.2.1'
   implementation 'com.arthenica:mobile-ffmpeg-full:4.3.1.LTS'
 }
 ```
@@ -140,7 +140,7 @@ dependencies {
 <dependency>
   <groupId>com.github.lincollincol</groupId>
   <artifactId>AudioTool</artifactId>
-  <version>1.2</version>
+  <version>1.2.1</version>
 </dependency>
 ```
 ## Permissions
