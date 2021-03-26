@@ -48,8 +48,6 @@ AudioTool - an android library that provides useful audio processing functions. 
       <li>generateWaveform(. . .) - generate image waveform (png)</li>
       <li>getMaxLevelData(. . .) - retrive audio max level data (data can be used to draw waveform)</li>
       <li>getDuration(. . .) - retrive audio duration</li>
-      <li>executeFFmpeg(. . .) - execute ffmpeg command</li>
-      <li>executeFFprobe(. . .) - execute ffprobe command</li>
     </ul>
   </li>
 </ul>
@@ -110,6 +108,8 @@ AudioTool.getInstance(this)
   /* calls */
   .release(); // Always call this function 
 ```
+# FFmpeg
+When you add AudioTool to your project, you also should implement <a href="https://github.com/tanersener/mobile-ffmpeg">tanersener mobile-ffmpeg library</a> which provides you full access to ffmpeg funcitons!
 
 # Download
 ## Gradle
@@ -122,7 +122,8 @@ allprojects {
 ```
 ``` groovy
 dependencies {
-  implementation 'com.github.lincollincol:AudioTool:1.1'
+  implementation 'com.github.lincollincol:AudioTool:1.2'
+  implementation 'com.arthenica:mobile-ffmpeg-full:4.3.1.LTS'
 }
 ```
 
@@ -139,7 +140,7 @@ dependencies {
 <dependency>
   <groupId>com.github.lincollincol</groupId>
   <artifactId>AudioTool</artifactId>
-  <version>1.1</version>
+  <version>1.2</version>
 </dependency>
 ```
 ## Permissions
